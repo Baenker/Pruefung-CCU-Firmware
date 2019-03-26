@@ -2,15 +2,18 @@
 * Prüft ob im Internet eine neue Firmwarer verfügbar ist
 * 
 * 19.03.19 V1.00    Erste Version
+* 20.03.19 V1.01    Logging optimiert
 **************************/
 var logging = true; 
-var debugging = true;  
+var debugging = false; 
+var debugging_response = false;     //nur im Fehlerfall auf true. Hiermit wird die Antwort der Internetadresse protokolliert
 var CCU_Version = 2;        //Hier die nr der CCU eintragen 2 = CCU2 oder 3 = CCU3
 //Datenpunkt auswählen wo die installierte Version ersichtlich ist (aus Homematic.Rega Adapter)
 var id_Version_installiert = "hm-rega.0.MEQ0228930.0.FIRMWARE_VERSION"/*hm-rega.0.MEQ0228930.0.FIRMWARE_VERSION*/;
-var id_Version_Internet = 'Systemvariable.0.Servicemeldungen.Verfuegbare_CCU-Firmware'/*Verfuegbare CCU-Firmware*/
+//Datenpunkt muss manuell angelegt werden. Kann irgendwo angelegt werden. Anschließend hier ersetzen
+var id_Version_Internet = 'Systemvariable.0.Servicemeldungen.Verfuegbare_CCU-Firmware'/*Verfuegbare CCU-Firmware*/;
 
-var observation = false;         //Dauerhafte Überwachung der Firmware (true = aktiv // false =inaktiv)
+var observation = true;         //Dauerhafte Überwachung der Firmware (true = aktiv // false =inaktiv)
 var onetime = true;             //Prüft beim Scriptstart auf aktuelle Firmware
 
 //Prio für Pushover
@@ -95,21 +98,21 @@ function func_Version(){
                 log('error: ' + error);
             }
             else{
-                if(Version_Internet == ''){
-                    if(debugging){
-                        log('[DEBUG] ' +'Objekt leer. Firmware wird erstmalig gesetzt');
+                if(Version_Internet === ''){
+                    if(logging){
+                        log('ausgewähltes Objekt leer. Firmware wird erstmalig gesetzt.');
                     }
                     setState(id_Version_Internet,Version[1]);
                 }
                 
                 if(Version_installiert == Version[1]){
-                    if(debugging){
-                        log('[DEBUG] ' +'Installierte Firmware der CCU ist aktuell');
+                    if(logging){
+                        log('Installierte Firmware '+Version_installiert  +' der CCU ist aktuell');
                     }
                 }
                 else{
-                    if(debugging){
-                        log('[DEBUG] ' +'Installierte Firmware der CCU ist nicht aktuell. Installiert: ' +Version_installiert +' --- Verfügbare Version: '+Version[1]);
+                    if(logging){
+                        log('Installierte Firmware '+Version_installiert  +' der CCU ist nicht aktuell. Aktuell verfügbare Version: '+Version[1]);
                     }
                     
                     if(Version_Internet == Version[1]){
@@ -119,7 +122,7 @@ function func_Version(){
                     }
                     else{
                         if(debugging){
-                            log('Installierte Firmware der CCU ist nicht aktuell. Installiert: ' +Version_installiert +' --- Verfügbare Version: '+Version[1]);
+                            log('[DEBUG] ' +'Installierte Firmware der CCU ist nicht aktuell.');
                         }
                         setState(id_Version_Internet,Version[1]);
                          _message_tmp = 'Installierte Firmware der CCU ist nicht aktuell. Installiert: ' +Version_installiert +' --- Verfügbare Version: '+Version[1];
@@ -144,8 +147,8 @@ function func_Version(){
                    
                 }
         
-                if(debugging){
-                    //log('body: ' + body);
+                if(debugging_response){
+                    log('body: ' + body);
                     log('Länge ' + Version.length + ' --- Version: ' + Version[1]);
                     log('response: ' + JSON.stringify(response));
                 }
