@@ -4,45 +4,45 @@
 * 19.03.19 V1.00    Erste Version
 * 20.03.19 V1.01    Logging optimiert
 **************************/
-var logging = true; 
-var debugging = false; 
-var debugging_response = false;     //nur im Fehlerfall auf true. Hiermit wird die Antwort der Internetadresse protokolliert
-var CCU_Version = 2;        //Hier die nr der CCU eintragen 2 = CCU2 oder 3 = CCU3
+const logging = true; 
+const debugging = false; 
+const debugging_response = false;     //nur im Fehlerfall auf true. Hiermit wird die Antwort der Internetadresse protokolliert
+const CCU_Version = 2;        //Hier die nr der CCU eintragen 2 = CCU2 oder 3 = CCU3
 //Datenpunkt auswählen wo die installierte Version ersichtlich ist (aus Homematic.Rega Adapter)
-var id_Version_installiert = "hm-rega.0.MEQ0228930.0.FIRMWARE_VERSION"/*hm-rega.0.MEQ0228930.0.FIRMWARE_VERSION*/;
+const id_Version_installiert = "hm-rega.0.MEQ0228930.0.FIRMWARE_VERSION"/*hm-rega.0.MEQ0228930.0.FIRMWARE_VERSION*/;
 //Datenpunkt muss manuell angelegt werden. Kann irgendwo angelegt werden. Anschließend hier ersetzen
-var id_Version_Internet = 'Systemvariable.0.Servicemeldungen.Verfuegbare_CCU-Firmware'/*Verfuegbare CCU-Firmware*/;
+const id_Version_Internet = 'Systemvariable.0.Servicemeldungen.Verfuegbare_CCU-Firmware'/*Verfuegbare CCU-Firmware*/;
 
-var observation = true;         //Dauerhafte Überwachung der Firmware (true = aktiv // false =inaktiv)
-var onetime = true;             //Prüft beim Scriptstart auf aktuelle Firmware
+const observation = true;         //Dauerhafte Überwachung der Firmware (true = aktiv // false =inaktiv)
+const onetime = true;             //Prüft beim Scriptstart auf aktuelle Firmware
 
 //Prio für Pushover
-var prio_Firmware = 0;
+const prio_Firmware = 0;
 
 
 //Variablen für Pushover
-var sendpush = true;            //true = verschickt per Pushover Nachrchten // false = Pushover wird nicht benutzt
-var _prio;
-var _titel;
-var _message;
-var _device = 'TPhone';         //Welches Gerät soll die Nachricht bekommen
+const sendpush = true;            //true = verschickt per Pushover Nachrchten // false = Pushover wird nicht benutzt
+const pushover_Instanz =  'pushover.0';     // Pushover instance um Nachrichten zy verschicken
+let _prio;
+let _titel;
+let _message;
+const _device = 'TPhone';         //Welches Gerät soll die Nachricht bekommen
 //var _device = 'All'; 
 
 //Variablen für Telegram
-var sendtelegram = false;            //true = verschickt per Telegram Nachrchten // false = Telegram wird nicht benutzt
-var user_telegram = '';             //User der die Nachricht bekommen soll
+const sendtelegram = false;            //true = verschickt per Telegram Nachrchten // false = Telegram wird nicht benutzt
+const user_telegram = '';             //User der die Nachricht bekommen soll
 
 //Variable zum verschicken der Servicemeldungen per eMail
-var sendmail = false;            //true = verschickt per email Nachrchten // false = email wird nicht benutzt
+const sendmail = false;            //true = verschickt per email Nachrchten // false = email wird nicht benutzt
 
 
 // ab hier keine Änderung
 
-var _message_tmp;
-
+let _message_tmp;
+const request = require('request');
 
 function send_pushover_V4 (_device, _message, _titel, _prio) {
-        var pushover_Instanz =  'pushover.0';
         if (_prio === 0){pushover_Instanz =  'pushover.0'}
         else if (_prio == 1){pushover_Instanz =  'pushover.1'}
         else if (_prio == 2){pushover_Instanz =  'pushover.2'}
@@ -64,7 +64,6 @@ function send_telegram (_message, user_telegram) {
         user: user_telegram,
         parse_mode: 'HTML'
     }); 
-
 }
 
 function send_mail (_message) {
@@ -74,30 +73,25 @@ function send_mail (_message) {
         subject: "Servicemeldung",
         text:    _message
     });
-
-
 }
 
 function func_Version(){
-    var Version_Internet = getState(id_Version_Internet).val;
-    var ccu2 = 'http://update.homematic.com/firmware/download?cmd=js_check_version&version=12345&product=HM-CCU2&serial=12345';
-    var ccu3 = 'http://update.homematic.com/firmware/download?cmd=js_check_version&version=12345&product=HM-CCU3&serial=12345';
-    var ccu;
+    const Version_Internet = getState(id_Version_Internet).val;
+    const ccu2 = 'http://update.homematic.com/firmware/download?cmd=js_check_version&version=12345&product=HM-CCU2&serial=12345';
+    const ccu3 = 'http://update.homematic.com/firmware/download?cmd=js_check_version&version=12345&product=HM-CCU3&serial=12345';
+    let ccu;
     if(CCU_Version == 3){ccu = ccu3;}
     else{ccu = ccu2;}
-
-    var request = require('request'),
     url = ccu;
 
     request({url : url},
 
         function (error, response, body) {
-            var Version_installiert = (getState(id_Version_installiert).val).trim();
-            var Version = body.split("'");
+            const Version_installiert = (getState(id_Version_installiert).val).trim();
+            const Version = body.split("'");
             if(error){
                 log('error: ' + error);
-            }
-            else{
+            } else {
                 if(Version_Internet === ''){
                     if(logging){
                         log('ausgewähltes Objekt leer. Firmware wird erstmalig gesetzt.');
@@ -119,14 +113,14 @@ function func_Version(){
                         if(debugging){
                             log('[DEBUG] ' +'Version Internet hat sich nicht verändert');
                         }
-                    }
-                    else{
+                    } else {
                         if(debugging){
                             log('[DEBUG] ' +'Installierte Firmware der CCU ist nicht aktuell.');
                         }
                         setState(id_Version_Internet,Version[1]);
                          _message_tmp = 'Installierte Firmware der CCU ist nicht aktuell. Installiert: ' +Version_installiert +' --- Verfügbare Version: '+Version[1];
-                        //Push verschicken
+                        
+                         //Push verschicken
                         if(sendpush){
                             _prio = prio_Firmware;
                             _titel = 'CCU-Firmware';
@@ -141,10 +135,7 @@ function func_Version(){
                             _message = _message_tmp;
                             send_mail(_message);
                         }
-                    }
-                
-                    
-                   
+                    }         
                 }
         
                 if(debugging_response){
@@ -154,9 +145,7 @@ function func_Version(){
                 }
             }
         }
-
     );
-    
 }
 
 if(observation){
