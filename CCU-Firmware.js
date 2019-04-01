@@ -3,11 +3,13 @@
 * 
 * 19.03.19 V1.00    Erste Version
 * 20.03.19 V1.01    Logging optimiert
+* 01.04.19 V1.02    Firmware kann auch für Rasperrymatic überwacht werden
+*                   Umstellung von var auf const und let (by Dutchman)
 **************************/
 const logging = true; 
 const debugging = false; 
-const debugging_response = false;     //nur im Fehlerfall auf true. Hiermit wird die Antwort der Internetadresse protokolliert
-const CCU_Version = 2;        //Hier die nr der CCU eintragen 2 = CCU2 oder 3 = CCU3
+const debugging_response = false;       //nur im Fehlerfall auf true. Hiermit wird die Antwort der Internetadresse protokolliert
+const CCU_Version = 2;                  //Hier eine Zahl eintragen: 2 = CCU2 // 3 = CCU3 // 4 = Rasperrymatic
 //Datenpunkt auswählen wo die installierte Version ersichtlich ist (aus Homematic.Rega Adapter)
 const id_Version_installiert = "hm-rega.0.MEQ0228930.0.FIRMWARE_VERSION"/*hm-rega.0.MEQ0228930.0.FIRMWARE_VERSION*/;
 //Datenpunkt muss manuell angelegt werden. Kann irgendwo angelegt werden. Anschließend hier ersetzen
@@ -22,12 +24,15 @@ const prio_Firmware = 0;
 
 //Variablen für Pushover
 const sendpush = true;            //true = verschickt per Pushover Nachrchten // false = Pushover wird nicht benutzt
-const pushover_Instanz =  'pushover.0';     // Pushover instance um Nachrichten zy verschicken
+const pushover_Instanz0 =  'pushover.0';     // Pushover instance für Pio = 0
+const pushover_Instanz1 =  'pushover.1';     // Pushover instance für Pio = 1
+const pushover_Instanz2 =  'pushover.2';     // Pushover instance für Pio = 2
+const pushover_Instanz3 =  'pushover.3';     // Pushover instance für Pio = -1 oder -2
 let _prio;
 let _titel;
 let _message;
 const _device = 'TPhone';         //Welches Gerät soll die Nachricht bekommen
-//var _device = 'All'; 
+//const _device = 'All'; 
 
 //Variablen für Telegram
 const sendtelegram = false;            //true = verschickt per Telegram Nachrchten // false = Telegram wird nicht benutzt
@@ -43,10 +48,10 @@ let _message_tmp;
 const request = require('request');
 
 function send_pushover_V4 (_device, _message, _titel, _prio) {
-        if (_prio === 0){pushover_Instanz =  'pushover.0'}
-        else if (_prio == 1){pushover_Instanz =  'pushover.1'}
-        else if (_prio == 2){pushover_Instanz =  'pushover.2'}
-        else {pushover_Instanz =  'pushover.3'}
+        if (_prio === 0){let pushover_Instanz =  pushover_Instanz0}
+        else if (_prio == 1){pushover_Instanz =  pushover_Instanz1}
+        else if (_prio == 2){pushover_Instanz =  pushover_Instanz2}
+        else {pushover_Instanz =  pushover_Instanz3}
         sendTo(pushover_Instanz, { 
         device: _device,
         message: _message, 
@@ -79,9 +84,11 @@ function func_Version(){
     const Version_Internet = getState(id_Version_Internet).val;
     const ccu2 = 'http://update.homematic.com/firmware/download?cmd=js_check_version&version=12345&product=HM-CCU2&serial=12345';
     const ccu3 = 'http://update.homematic.com/firmware/download?cmd=js_check_version&version=12345&product=HM-CCU3&serial=12345';
+    const Raspi = 'https://gitcdn.xyz/repo/jens-maus/RaspberryMatic/master/release/LATEST-VERSION.js?_version_=CURRENT_VERSION';
     let ccu;
     if(CCU_Version == 3){ccu = ccu3;}
-    else{ccu = ccu2;}
+    else if(CCU_Version == 4){ccu = Raspi;}
+    else {ccu = ccu2;}
     url = ccu;
 
     request({url : url},
