@@ -6,6 +6,6 @@ Es kann eine Pushover, Telegram oder Mail versendet werden.
 
 Es wird nur einmalig informiert wenn eine neue Version verfügbar ist.
 
-Das Script funktioniert nur für die CCU2 und CCU3. Leider nicht für Rasperymatic oder andere Systeme.
+Das Script funktioniert derzeit für die CCU2 und CCU3 und Raspberrymatic. Andere Systeme würde ich einfügen wenn man die Version im Internet abfragen kann.
 
 Das Script vor der ersten Nutzung konfigurieren. Dazu einfach die ersten Zeilen im Script durcharbeiten.
