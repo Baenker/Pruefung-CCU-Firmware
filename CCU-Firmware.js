@@ -12,7 +12,7 @@
 *                   Logging optimiert und für Debugging erweitert
 * 04.04.19 V1.05    Link zu Github aufgenommen
 *                   Rechtschreibfehler korrigiert 
-* 11.04.19 V1.06    Fehler behoben wenn Version im Internet nicht abgefragt werden kann
+* 11.05.19 V1.06    Fehler behoben wenn Version im Internet nicht abgefragt werden kann
 **************************/
 const logging = true; 
 const debugging = false; 
