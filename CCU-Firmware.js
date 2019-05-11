@@ -1,5 +1,6 @@
 /**************************
-* Prüft ob im Internet eine neue Firmwarer verfügbar ist
+* Prüft ob im Internet eine neue Firmware verfügbar ist
+* https://github.com/Baenker/Pruefung-CCU-Firmware
 * 
 * 19.03.19 V1.00    Erste Version
 * 20.03.19 V1.01    Logging optimiert
@@ -9,6 +10,9 @@
 * 03.04.19 V1.04    Firmware kann nun für piVCCU, piVCCU3 und debimatic übverwacht werden und zwar jeweils mit latest oder testing
 *                   Bugfix Variable Version_Internet
 *                   Logging optimiert und für Debugging erweitert
+* 04.04.19 V1.05    Link zu Github aufgenommen
+*                   Rechtschreibfehler korrigiert 
+* 11.04.19 V1.06    Fehler behoben wenn Version im Internet nicht abgefragt werden kann
 **************************/
 const logging = true; 
 const debugging = false; 
@@ -151,23 +155,30 @@ function func_Version(){
                         if(debugging){
                             log('[DEBUG] ' +'Installierte Firmware der CCU ist nicht aktuell.');
                         }
-                        setState(id_Version_Internet,Version[1]);
-                         _message_tmp = 'Installierte Firmware der CCU ('+Version[3]  +') ist nicht aktuell. Installiert: ' +Version_installiert +' --- Verfügbare Version: '+Version[1];
+                        if(typeof Version !== "undefined") {
+                            setState(id_Version_Internet,Version[1]);
+                            _message_tmp = 'Installierte Firmware der CCU ('+Version[3]  +') ist nicht aktuell. Installiert: ' +Version_installiert +' --- Verfügbare Version: '+Version[1];
                         
-                         //Push verschicken
-                        if(sendpush){
-                            _prio = prio_Firmware;
-                            _titel = 'CCU-Firmware';
-                            _message = _message_tmp;
-                            send_pushover_V4(_device, _message, _titel, _prio);
+                            //Push verschicken
+                            if(sendpush){
+                                _prio = prio_Firmware;
+                                _titel = 'CCU-Firmware';
+                                _message = _message_tmp;
+                                send_pushover_V4(_device, _message, _titel, _prio);
+                            }
+                            if(sendtelegram){
+                                _message = _message_tmp;
+                                send_telegram(_message, user_telegram);
+                            }
+                            if(sendmail){
+                                _message = _message_tmp;
+                                send_mail(_message);
+                            }
                         }
-                        if(sendtelegram){
-                            _message = _message_tmp;
-                            send_telegram(_message, user_telegram);
-                        }
-                        if(sendmail){
-                            _message = _message_tmp;
-                            send_mail(_message);
+                        else{
+                            if(logging){
+                                log('Version im Internet kann zur Zeit nicht abgwefragt werden.');
+                            }
                         }
                     }         
                 }
