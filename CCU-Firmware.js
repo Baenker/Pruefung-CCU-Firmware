@@ -13,6 +13,8 @@
 * 04.04.19 V1.05    Link zu Github aufgenommen
 *                   Rechtschreibfehler korrigiert 
 * 11.05.19 V1.06    Fehler behoben wenn Version im Internet nicht abgefragt werden kann
+* 24.05.19 V1.07    Fehler behoben wenn Version im Internet nicht abgefragt werden kann (wirklich :-)
+*                   Beim Buxfix vom 11.05 wäre nur die Push unterdrückt worden. Logeinträge wären aber fehlerhaft gewesen
 **************************/
 const logging = true; 
 const debugging = false; 
@@ -121,6 +123,15 @@ function func_Version(){
             const Version_installiert = (getState(id_Version_installiert).val).trim();
             const Version = body.split("'");
             
+            //Fehler finden
+            if(debugging){
+                log('[DEBUG] ' +'Typ body: ' +typeof body);
+                log('[DEBUG] ' +'Typ Version: ' +typeof Version);
+                log('[DEBUG] ' +'Typ Version1: ' +typeof Version[1]);
+                log('[DEBUG] ' +'Typ Version2: ' +typeof Version[2]);
+                log('[DEBUG] ' +'Typ Version3: ' +typeof Version[3]);
+            }
+            
             if(error){
                 log('error: ' + error);
             } else {
@@ -130,32 +141,32 @@ function func_Version(){
                     log('[DEBUG] ' +'Version aus URL: '+Version[1]);
                     log('[DEBUG] ' +'Name aus URL für Version: '+Version[3]);
                 }
-                if(Version_Internet === ''){
-                    if(logging){
-                        log('ausgewähltes Objekt leer. Firmware wird erstmalig gesetzt. Firmware: '+Version[1] +' Zentrale: ' +Version[3]);
+                if(typeof Version[1] == "string") {
+                    if(Version_Internet === ''){
+                        if(logging){
+                            log('ausgewähltes Objekt leer. Firmware wird erstmalig gesetzt. Firmware: '+Version[1] +' Zentrale: ' +Version[3]);
+                        }
+                        setState(id_Version_Internet,Version[1]);
                     }
-                    setState(id_Version_Internet,Version[1]);
-                }
                 
-                if(Version_installiert == Version[1]){
-                    if(logging){
-                        log('Installierte Firmware '+Version_installiert  +' der CCU ('+Version[3]  +') ist aktuell.');
+                    if(Version_installiert == Version[1]){
+                        if(logging){
+                            log('Installierte Firmware '+Version_installiert  +' der CCU ('+Version[3]  +') ist aktuell.');
+                        }
                     }
-                }
-                else{
-                    if(logging){
-                        log('Installierte Firmware '+Version_installiert  +' der CCU ('+Version[3]  +') ist nicht aktuell. Aktuell verfügbare Version: '+Version[1]);
-                    }
+                    else{
+                        if(logging){
+                            log('Installierte Firmware '+Version_installiert  +' der CCU ('+Version[3]  +') ist nicht aktuell. Aktuell verfügbare Version: '+Version[1]);
+                        }
                     
-                    if(Version_Internet == Version[1]){
-                        if(debugging){
-                            log('[DEBUG] ' +'Version Internet hat sich nicht verändert');
-                        }
-                    } else {
-                        if(debugging){
-                            log('[DEBUG] ' +'Installierte Firmware der CCU ist nicht aktuell.');
-                        }
-                        if(typeof Version !== "undefined") {
+                        if(Version_Internet == Version[1]){
+                            if(debugging){
+                                log('[DEBUG] ' +'Version Internet hat sich nicht verändert');
+                            }
+                        } else {
+                            if(debugging){
+                                log('[DEBUG] ' +'Installierte Firmware der CCU ist nicht aktuell.');
+                            }
                             setState(id_Version_Internet,Version[1]);
                             _message_tmp = 'Installierte Firmware der CCU ('+Version[3]  +') ist nicht aktuell. Installiert: ' +Version_installiert +' --- Verfügbare Version: '+Version[1];
                         
@@ -174,13 +185,14 @@ function func_Version(){
                                 _message = _message_tmp;
                                 send_mail(_message);
                             }
-                        }
-                        else{
-                            if(logging){
-                                log('Version im Internet kann zur Zeit nicht abgwefragt werden.');
-                            }
-                        }
-                    }         
+                        
+                        }         
+                    }
+                }
+                else{
+                    if(logging){
+                        log('Version im Internet kann zur Zeit nicht abgefragt werden.');
+                    }
                 }
         
                 if(debugging_response){
