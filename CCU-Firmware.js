@@ -15,6 +15,7 @@
 * 11.05.19 V1.06    Fehler behoben wenn Version im Internet nicht abgefragt werden kann
 * 24.05.19 V1.07    Fehler behoben wenn Version im Internet nicht abgefragt werden kann (wirklich :-)
 *                   Beim Buxfix vom 11.05 wäre nur die Push unterdrückt worden. Logeinträge wären aber fehlerhaft gewesen
+* 27.05.19 V1.08    Log eingefügt da Script mit Änderungen vom 24.05.19 abstürtzt wenn der Abruf aus dem Internet nicht funktioniert
 **************************/
 const logging = true; 
 const debugging = false; 
@@ -121,8 +122,10 @@ function func_Version(){
         function (error, response, body) {
             const Version_Internet = getState(id_Version_Internet).val;
             const Version_installiert = (getState(id_Version_installiert).val).trim();
-            const Version = body.split("'");
+            log('[DEBUG] ' +'Typ body: ' +typeof body);
             
+            const Version = body.split("'");
+            log('[DEBUG] ' +'Typ Version: ' +typeof Version);
             //Fehler finden
             if(debugging){
                 log('[DEBUG] ' +'Typ body: ' +typeof body);
@@ -141,7 +144,7 @@ function func_Version(){
                     log('[DEBUG] ' +'Version aus URL: '+Version[1]);
                     log('[DEBUG] ' +'Name aus URL für Version: '+Version[3]);
                 }
-                if(typeof Version[1] == "string") {
+                //if(typeof Version[1] == "string") {
                     if(Version_Internet === ''){
                         if(logging){
                             log('ausgewähltes Objekt leer. Firmware wird erstmalig gesetzt. Firmware: '+Version[1] +' Zentrale: ' +Version[3]);
@@ -188,12 +191,12 @@ function func_Version(){
                         
                         }         
                     }
-                }
-                else{
-                    if(logging){
-                        log('Version im Internet kann zur Zeit nicht abgefragt werden.');
-                    }
-                }
+                //}
+                //else{
+                //    if(logging){
+                //        log('Version im Internet kann zur Zeit nicht abgefragt werden.');
+                //    }
+                //}
         
                 if(debugging_response){
                     log('body: ' + body);
