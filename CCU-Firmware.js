@@ -16,6 +16,7 @@
 * 24.05.19 V1.07    Fehler behoben wenn Version im Internet nicht abgefragt werden kann (wirklich :-)
 *                   Beim Buxfix vom 11.05 wäre nur die Push unterdrückt worden. Logeinträge wären aber fehlerhaft gewesen
 * 27.05.19 V1.08    Log eingefügt da Script mit Änderungen vom 24.05.19 abstürtzt wenn der Abruf aus dem Internet nicht funktioniert
+* 06.06.19 V1.09    Fehler versucht mit Abfrage isNAN zu unterdrücken
 **************************/
 const logging = true; 
 const debugging = false; 
@@ -122,10 +123,10 @@ function func_Version(){
         function (error, response, body) {
             const Version_Internet = getState(id_Version_Internet).val;
             const Version_installiert = (getState(id_Version_installiert).val).trim();
-            log('[DEBUG] ' +'Typ body: ' +typeof body);
+            //log('[DEBUG] ' +'Typ body: ' +typeof body);
             
             const Version = body.split("'");
-            log('[DEBUG] ' +'Typ Version: ' +typeof Version);
+            //log('[DEBUG] ' +'Typ Version: ' +typeof Version);
             //Fehler finden
             if(debugging){
                 log('[DEBUG] ' +'Typ body: ' +typeof body);
@@ -170,25 +171,32 @@ function func_Version(){
                             if(debugging){
                                 log('[DEBUG] ' +'Installierte Firmware der CCU ist nicht aktuell.');
                             }
-                            setState(id_Version_Internet,Version[1]);
-                            _message_tmp = 'Installierte Firmware der CCU ('+Version[3]  +') ist nicht aktuell. Installiert: ' +Version_installiert +' --- Verfügbare Version: '+Version[1];
+                            if(isNAN(Version[1].substr(0,1))){
+                                if(logging){
+                                    log('Wahrscheinlich konnte die Version nicht ermittelt werden');    
+                                }
+                            }
+                            else{
+                                setState(id_Version_Internet,Version[1]);
+                            
+                                _message_tmp = 'Installierte Firmware der CCU ('+Version[3]  +') ist nicht aktuell. Installiert: ' +Version_installiert +' --- Verfügbare Version: '+Version[1];
                         
-                            //Push verschicken
-                            if(sendpush){
-                                _prio = prio_Firmware;
-                                _titel = 'CCU-Firmware';
-                                _message = _message_tmp;
-                                send_pushover_V4(_device, _message, _titel, _prio);
+                                //Push verschicken
+                                if(sendpush){
+                                    _prio = prio_Firmware;
+                                    _titel = 'CCU-Firmware';
+                                    _message = _message_tmp;
+                                    send_pushover_V4(_device, _message, _titel, _prio);
+                                }
+                                if(sendtelegram){
+                                    _message = _message_tmp;
+                                    send_telegram(_message, user_telegram);
+                                }
+                                if(sendmail){
+                                    _message = _message_tmp;
+                                    send_mail(_message);
+                                }
                             }
-                            if(sendtelegram){
-                                _message = _message_tmp;
-                                send_telegram(_message, user_telegram);
-                            }
-                            if(sendmail){
-                                _message = _message_tmp;
-                                send_mail(_message);
-                            }
-                        
                         }         
                     }
                 //}
