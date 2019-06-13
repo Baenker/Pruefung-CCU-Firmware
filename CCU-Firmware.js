@@ -171,7 +171,7 @@ function func_Version(){
                             if(debugging){
                                 log('[DEBUG] ' +'Installierte Firmware der CCU ist nicht aktuell.');
                             }
-                            if(isNAN(Version[1].substr(0,1))){
+                            if(isNaN(Version[1].substr(0,1))){
                                 if(logging){
                                     log('Wahrscheinlich konnte die Version nicht ermittelt werden');    
                                 }
