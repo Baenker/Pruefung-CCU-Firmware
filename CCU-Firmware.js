@@ -17,11 +17,14 @@
 *                   Beim Buxfix vom 11.05 wäre nur die Push unterdrückt worden. Logeinträge wären aber fehlerhaft gewesen
 * 27.05.19 V1.08    Log eingefügt da Script mit Änderungen vom 24.05.19 abstürtzt wenn der Abruf aus dem Internet nicht funktioniert
 * 06.06.19 V1.09    Fehler versucht mit Abfrage isNAN zu unterdrücken
+* 13.06.19 V1.10    Korrektur isNaN
+* 25.10.19 V1.11    Neuer Versuch wenn Version im Internet nicht abgefragt werden kann
+* 18.11.19 V1.12    Kleiner Fehler behoben
 **************************/
 const logging = true; 
 const debugging = false; 
 const debugging_response = false;       //nur im Fehlerfall auf true. Hiermit wird die Antwort der Internetadresse protokolliert
-const CCU_Version = 2;                  //Hier eine Zahl eintragen: 2 = CCU2 // 3 = CCU3 // 4 = Rasperrymatic // 5= pivccu2 lastest 
+let CCU_Version = 2;                  //Hier eine Zahl eintragen: 2 = CCU2 // 3 = CCU3 // 4 = Rasperrymatic // 5= pivccu2 lastest 
 //= 6 pivccu3 latest // 7 = debimatic = latest bzw 51, 61 bzw 71 für die jeweilige Testing Version
 //Datenpunkt auswählen wo die installierte Version ersichtlich ist (aus Homematic.Rega Adapter)
 const id_Version_installiert = "hm-rega.0.MEQ0228930.0.FIRMWARE_VERSION"/*hm-rega.0.MEQ0228930.0.FIRMWARE_VERSION*/;
@@ -33,7 +36,6 @@ const onetime = true;             //Prüft beim Scriptstart auf aktuelle Firmwar
 
 //Prio für Pushover
 const prio_Firmware = 0;
-
 
 //Variablen für Pushover
 const sendpush = true;            //true = verschickt per Pushover Nachrchten // false = Pushover wird nicht benutzt
@@ -54,9 +56,7 @@ const user_telegram = '';             //User der die Nachricht bekommen soll
 //Variable zum verschicken der Servicemeldungen per eMail
 const sendmail = false;            //true = verschickt per email Nachrchten // false = email wird nicht benutzt
 
-
-// ab hier keine Änderung
-
+// **************************** ab hier keine Änderung *********************************************************
 let _message_tmp;
 const request = require('request');
 
@@ -104,15 +104,14 @@ function func_Version(){
     const testing_pivccu = 'https://www.pivccu.de/pivccu.latestVersion?serial=ioBroker';
     const testing_pivccu3 = 'https://www.pivccu.de/pivccu3.latestVersion?serial=ioBroker';
     const testing_debimatic = 'https://www.debmatic.de/latestVersion?serial=ioBroker';
-    
-    
+        
     let ccu;
     if(CCU_Version == 3){ccu = ccu3;}
     else if(CCU_Version == 4){ccu = Raspi;}
     else if(CCU_Version == 5){ccu = pivccu2;}
     else if(CCU_Version == 6){ccu = pivccu3;}
     else if(CCU_Version == 7){ccu = debimatic;}
-    else if(CCU_Version == 51){ccu = testing_pivccu2;}
+    else if(CCU_Version == 51){ccu = testing_pivccu;}
     else if(CCU_Version == 61){ccu = testing_pivccu3;}
     else if(CCU_Version == 71){ccu = testing_debimatic;}
     else {ccu = ccu2;}
@@ -145,7 +144,7 @@ function func_Version(){
                     log('[DEBUG] ' +'Version aus URL: '+Version[1]);
                     log('[DEBUG] ' +'Name aus URL für Version: '+Version[3]);
                 }
-                //if(typeof Version[1] == "string") {
+                if(typeof Version[1] !='undefined' || Version[1] != undefined){
                     if(Version_Internet === ''){
                         if(logging){
                             log('ausgewähltes Objekt leer. Firmware wird erstmalig gesetzt. Firmware: '+Version[1] +' Zentrale: ' +Version[3]);
@@ -199,12 +198,12 @@ function func_Version(){
                             }
                         }         
                     }
-                //}
-                //else{
-                //    if(logging){
-                //        log('Version im Internet kann zur Zeit nicht abgefragt werden.');
-                //    }
-                //}
+                }
+                else{
+                    if(logging){
+                        log('Version im Internet kann zur Zeit nicht abgefragt werden.');
+                    }
+                }
         
                 if(debugging_response){
                     log('body: ' + body);
