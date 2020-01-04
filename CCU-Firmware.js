@@ -20,6 +20,8 @@
 * 13.06.19 V1.10    Korrektur isNaN
 * 25.10.19 V1.11    Neuer Versuch wenn Version im Internet nicht abgefragt werden kann
 * 18.11.19 V1.12    Kleiner Fehler behoben
+* 03.12.19 V1.13    Version konnte durch fake Nummern nicht mehr abgefragt. Jetzt Abfrage mit anderen Fakenummern :-)
+*                   Logging optimiert
 **************************/
 const logging = true; 
 const debugging = false; 
@@ -95,8 +97,9 @@ function send_mail (_message) {
 }
 
 function func_Version(){
-    const ccu2 = 'http://update.homematic.com/firmware/download?cmd=js_check_version&version=12345&product=HM-CCU2&serial=12345';
-    const ccu3 = 'http://update.homematic.com/firmware/download?cmd=js_check_version&version=12345&product=HM-CCU3&serial=12345';
+    //const ccu2 = 'http://update.homematic.com/firmware/download?cmd=js_check_version&version=12345&product=HM-CCU2&serial=12345';
+    const ccu2 = 'https://update.homematic.com/firmware/download?cmd=js_check_version&version=2.22.22&product=HM-CCU2&serial=NEQ7777777';
+    const ccu3 = 'http://update.homematic.com/firmware/download?cmd=js_check_version&version=3.22.22&product=HM-CCU3&serial=NEQ7777777';
     const Raspi = 'https://gitcdn.xyz/repo/jens-maus/RaspberryMatic/master/release/LATEST-VERSION.js?_version_=CURRENT_VERSION';
     const pivccu2 = 'https://www.pivccu.de/pivccu.latestVersion?serial=ioBroker';
     const pivccu3 = 'https://www.pivccu.de/pivccu3.latestVersion?serial=ioBroker';
@@ -158,8 +161,10 @@ function func_Version(){
                         }
                     }
                     else{
-                        if(logging){
-                            log('Installierte Firmware '+Version_installiert  +' der CCU ('+Version[3]  +') ist nicht aktuell. Aktuell verfügbare Version: '+Version[1]);
+                        if(!isNaN(Version[1].substr(0,1))){
+                            if(logging){
+                                log('Installierte Firmware '+Version_installiert  +' der CCU ('+Version[3]  +') ist nicht aktuell. Aktuell verfügbare Version: '+Version[1]);
+                            }
                         }
                     
                         if(Version_Internet == Version[1]){
@@ -172,7 +177,7 @@ function func_Version(){
                             }
                             if(isNaN(Version[1].substr(0,1))){
                                 if(logging){
-                                    log('Wahrscheinlich konnte die Version nicht ermittelt werden');    
+                                    log('Version im Internet konnte nicht ermittelt werden');    
                                 }
                             }
                             else{
