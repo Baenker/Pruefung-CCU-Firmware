@@ -22,6 +22,7 @@
 * 18.11.19 V1.12    Kleiner Fehler behoben
 * 03.12.19 V1.13    Version konnte durch fake Nummern nicht mehr abgefragt. Jetzt Abfrage mit anderen Fakenummern :-)
 *                   Logging optimiert
+* 26.10.20 V1.14    neuer Link Rasperrymatic 
 **************************/
 const logging = true; 
 const debugging = false; 
@@ -100,7 +101,7 @@ function func_Version(){
     //const ccu2 = 'http://update.homematic.com/firmware/download?cmd=js_check_version&version=12345&product=HM-CCU2&serial=12345';
     const ccu2 = 'https://update.homematic.com/firmware/download?cmd=js_check_version&version=2.22.22&product=HM-CCU2&serial=NEQ7777777';
     const ccu3 = 'http://update.homematic.com/firmware/download?cmd=js_check_version&version=3.22.22&product=HM-CCU3&serial=NEQ7777777';
-    const Raspi = 'https://gitcdn.xyz/repo/jens-maus/RaspberryMatic/master/release/LATEST-VERSION.js?_version_=CURRENT_VERSION';
+    const Raspi = 'https://raspberrymatic.de/LATEST-VERSION.js';
     const pivccu2 = 'https://www.pivccu.de/pivccu.latestVersion?serial=ioBroker';
     const pivccu3 = 'https://www.pivccu.de/pivccu3.latestVersion?serial=ioBroker';
     const debimatic = 'https://www.debmatic.de/latestVersion?serial=ioBroker';
