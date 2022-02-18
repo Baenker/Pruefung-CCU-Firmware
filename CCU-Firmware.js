@@ -26,6 +26,8 @@
 * 07.02.21 V1.15    Abfrage nun per Axios
 * 19.02.21 V1.16    Logeintrag entfernt aus V1.15
 * 18.05.21 V1.17    Alter Code entfernt
+* 09.08.21 V1.18    Umstellung userdata
+* 20.01.22 V1.19    Umstellung axios da alte Abfrage nicht mehr funktionierte
 **************************/
 const logging = true; 
 const debugging = false; 
@@ -36,7 +38,7 @@ let CCU_Version = 2;                  //Hier eine Zahl eintragen: 2 = CCU2 // 3 
 //Datenpunkt auswählen wo die installierte Version ersichtlich ist (aus Homematic.Rega Adapter)
 const id_Version_installiert = "hm-rega.0.MEQ0228930.0.FIRMWARE_VERSION"/*hm-rega.0.MEQ0228930.0.FIRMWARE_VERSION*/;
 //Datenpunkt muss manuell angelegt werden. Kann irgendwo angelegt werden. Anschließend hier ersetzen
-const id_Version_Internet = 'Systemvariable.0.Servicemeldungen.Verfuegbare_CCU-Firmware'/*Verfuegbare CCU-Firmware*/;
+const id_Version_Internet = '0_userdata.0.Serverraum.CCU.Verfuegbare_CCU-Firmware'/*Verfuegbare CCU-Firmware*/;
 
 const observation = true;         //Dauerhafte Überwachung der Firmware (true = aktiv // false =inaktiv)
 const onetime = true;             //Prüft beim Scriptstart auf aktuelle Firmware
@@ -62,10 +64,9 @@ const user_telegram = '';             //User der die Nachricht bekommen soll
 
 //Variable zum verschicken der Servicemeldungen per eMail
 const sendmail = false;            //true = verschickt per email Nachrchten // false = email wird nicht benutzt
-
 // **************************** ab hier keine Änderung *********************************************************
 let _message_tmp;
-const request = require('request');
+let _Version;
 
 function send_pushover_V4 (_device, _message, _titel, _prio) {
         let pushover_Instanz;
@@ -101,8 +102,7 @@ function send_mail (_message) {
     });
 }
 
-
-function func_Version(){
+async function func_getInternetVersion(){
     //const ccu2 = 'http://update.homematic.com/firmware/download?cmd=js_check_version&version=12345&product=HM-CCU2&serial=12345';
     const ccu2 = 'https://update.homematic.com/firmware/download?cmd=js_check_version&version=2.22.22&product=HM-CCU2&serial=NEQ7777777';
     const ccu3 = 'http://update.homematic.com/firmware/download?cmd=js_check_version&version=3.22.22&product=HM-CCU3&serial=NEQ7777777';
@@ -125,162 +125,109 @@ function func_Version(){
     else if(CCU_Version == 71){ccu = testing_debimatic;}
     else {ccu = ccu2;}
     let url = ccu;
-
-
-
-    const axios = require('axios');
-    axios({
-        method: 'get',
-        baseURL: url,
-        timeout: 4500,
-         responseType: 'json'
-     })
-     .then((response) => {
-                           
+        
+    const axios = require('axios').default;
+    
+    try{
+        let res = await axios.get(url,
+            {timeout: 4500,
+            responseType: 'json'
+            }
+        )
+        
+        var data_string = JSON.stringify(res.data)
+        var Version = data_string.split("'");
         if(debugging){
-            console.log('data:' +response.data);
-            console.log('Status: ' +response.status);
-            console.log('Header:' +response.headers);
+            log('[DEBUG] ' +'Typ body: ' +typeof data_string);
+            log('[DEBUG] ' +'Body: '+data_string);
+            log('[DEBUG] ' +'data:' +res.data);
+            log('[DEBUG] ' +'Status: ' +res.status);
+            log('[DEBUG] ' +'Header:' +res.headers);
+            log('[DEBUG] ' +'Typ Version: ' +typeof Version);
+            log('[DEBUG] ' +'Typ Version1: ' +typeof Version[1]);
+            log('[DEBUG] ' +'Typ Version2: ' +typeof Version[2]);
+            log('[DEBUG] ' +'Typ Version3: ' +typeof Version[3]);
+            log('[DEBUG] ' +'Version aus URL: '+Version[1]);
+            log('[DEBUG] ' +'Name aus URL für Version: '+Version[3]);
         }
-        if(response.status = 200){
-            //Umwandeln in String
-            var data_string = JSON.stringify(response.data)
-            //1. Split
-            //var data_split= data_string.split("{");
-            //Unnötige Sachen entfernen
-            //var data_replace = data_split[2].replace(/}|,|]|:/gi,'');
-            //mit 2. Split zum Ergebnis
-            //var data_final = data_replace.split('"');
-            //Ergebnisse
-            //var _Status = parseInt(data_final[2],10);
-            //var _Helligkeit = parseInt(data_final[4],10);
-            //var _Temperatur = parseInt(data_final[6],10);
-           
-
-            const Version_Internet = getState(id_Version_Internet).val;
-            const Version_installiert = (getState(id_Version_installiert).val).trim();
-            //log('[DEBUG] ' +'Typ body: ' +typeof body);
-            
-            const Version = data_string.split("'");
-            //log('[DEBUG] ' +'Typ Version: ' +typeof Version);
-            //Fehler finden
+        if(res.Status = '200'){
             if(debugging){
-                log('[DEBUG] ' +'Typ body: ' +typeof data_string);
-                log('[DEBUG] ' +'Typ Version: ' +typeof Version);
-                log('[DEBUG] ' +'Typ Version1: ' +typeof Version[1]);
-                log('[DEBUG] ' +'Typ Version2: ' +typeof Version[2]);
-                log('[DEBUG] ' +'Typ Version3: ' +typeof Version[3]);
+                log('aktuelle Version (per Internet): '+Version[1]);
+                log('Verwendete CCU (per Internet): '+Version[3]);
             }
-            
-            
-            
-                if(debugging){
-                    log('[DEBUG] ' +'Version installiert: '+Version_installiert);
-                    log('[DEBUG] ' +'Version Internet: '+Version_Internet);
-                    log('[DEBUG] ' +'Version aus URL: '+Version[1]);
-                    log('[DEBUG] ' +'Name aus URL für Version: '+Version[3]);
-                }
-                if(typeof Version[1] !='undefined' || Version[1] != undefined){
-                    if(Version_Internet === ''){
-                        if(logging){
-                            log('ausgewähltes Objekt leer. Firmware wird erstmalig gesetzt. Firmware: '+Version[1] +' Zentrale: ' +Version[3]);
-                        }
-                        setState(id_Version_Internet,Version[1]);
-                    }
-                
-                    if(Version_installiert == Version[1]){
-                        if(logging){
-                            log('Installierte Firmware '+Version_installiert  +' der CCU ('+Version[3]  +') ist aktuell.');
-                        }
-                    }
-                    else{
-                        if(!isNaN(parseInt(Version[1].substr(0,1)))){
-                            if(logging){
-                                log('Installierte Firmware '+Version_installiert  +' der CCU ('+Version[3]  +') ist nicht aktuell. Aktuell verfügbare Version: '+Version[1]);
-                            }
-                        }
-                    
-                        if(Version_Internet == Version[1]){
-                            if(debugging){
-                                log('[DEBUG] ' +'Version Internet hat sich nicht verändert');
-                            }
-                        } else {
-                            if(debugging){
-                                log('[DEBUG] ' +'Installierte Firmware der CCU ist nicht aktuell.');
-                            }
-                            if(isNaN(parseInt(Version[1].substr(0,1)))){
-                                if(logging){
-                                    log('Version im Internet konnte nicht ermittelt werden');    
-                                }
-                            }
-                            else{
-                                setState(id_Version_Internet,Version[1]);
-                            
-                                _message_tmp = 'Installierte Firmware der CCU ('+Version[3]  +') ist nicht aktuell. Installiert: ' +Version_installiert +' --- Verfügbare Version: '+Version[1];
-                        
-                                //Push verschicken
-                                if(sendpush){
-                                    _prio = prio_Firmware;
-                                    _titel = 'CCU-Firmware';
-                                    _message = _message_tmp;
-                                    send_pushover_V4(_device, _message, _titel, _prio);
-                                }
-                                if(sendtelegram){
-                                    _message = _message_tmp;
-                                    send_telegram(_message, user_telegram);
-                                }
-                                if(sendmail){
-                                    _message = _message_tmp;
-                                    send_mail(_message);
-                                }
-                            }
-                        }         
-                    }
-                }
-                else{
-                    if(logging){
-                        log('Version im Internet kann zur Zeit nicht abgefragt werden.');
-                    }
-                }
-        
-                if(debugging_response){
-                    log('body: ' + data_string);
-                    log('Länge ' + Version.length + ' --- Version: ' + Version[1]);
-                    log('response: ' + JSON.stringify(response));
-                }
-            
-        
-
-                     
-
-            
-            
         }
-        else{
-            if(logging){
-                log('Hier stimmt etwas nicht. Meldung: '+response.status)
-            }
-        } 
-
-                            
-
-    })
-    .catch(
-        (error) => {
-            // handle error
-            log('Fehler bei der Abfrage der Firmware: '+error,'warn');                    
-        }
-    );
-
+        return {Version: Version[1], CCU: Version[3], Status: res.Status};
+    }
+    catch (e) {
+    
+        log('Fehler: '+e)
+        //var status;
+        //return status = false;
+    }
 }
 
+async function func_Version(){
+    const Version_Internet_alt = getState(id_Version_Internet).val;
+    const Version_installiert = (getState(id_Version_installiert).val).trim();
+    var get_InternetVersion = await func_getInternetVersion()
+    var Internet_Firmware = get_InternetVersion.Version;
+    var Internet_CCU = get_InternetVersion.CCU;
+    
+    if(debugging){
+        log('Firmware: '+Internet_Firmware +' Zentrale: ' +Internet_CCU);
+    }
+    
+
+    if(Version_installiert == Internet_Firmware){
+        if(logging){
+            log('Installierte Firmware '+Version_installiert  +' der CCU ('+Internet_CCU  +') ist aktuell.');
+        }
+    }
+    else{
+        if(Version_Internet_alt == Internet_Firmware){
+            if(logging){
+                log('Installierte Firmware der CCU ('+Internet_CCU  +') ist nicht aktuell. Installiert: ' +Version_installiert +' --- Verfügbare Version: '+Internet_Firmware);
+            }
+
+        }
+        else{
+             _message_tmp = 'Installierte Firmware der CCU ('+Internet_CCU  +') ist nicht aktuell. Installiert: ' +Version_installiert +' --- Verfügbare Version: '+Internet_Firmware;
+            if(logging){
+                log(_message_tmp);
+            }
+            setState(id_Version_Internet,Internet_Firmware);
+                            
+           
+    
+            //Push verschicken
+            if(sendpush){
+                _prio = prio_Firmware;
+                _titel = 'CCU-Firmware';
+                _message = _message_tmp;
+                send_pushover_V4(_device, _message, _titel, _prio);
+            }
+            if(sendtelegram){
+                _message = _message_tmp;
+                send_telegram(_message, user_telegram);
+            }
+            if(sendmail){
+                _message = _message_tmp;
+                send_mail(_message);
+            }
+        }
+    
+    }
+   
+}   
 
 if(observation){
-    //Nachts einmalig ausführen 00:30 Schaltzeiten berechnen
-    schedule("54 05 * * *", func_Version);
+    //Nachts einmalig ausführen
+    schedule("33 0 * * *", func_Version);
 }
 
 if(onetime){
     //beim Starten
+    //func_getInternetVersion();
     func_Version();
 }
+
