@@ -28,6 +28,8 @@
 * 18.05.21 V1.17    Alter Code entfernt
 * 09.08.21 V1.18    Umstellung userdata
 * 20.01.22 V1.19    Umstellung axios da alte Abfrage nicht mehr funktionierte
+* 18.02.22 V1.20    Status Abfrage korrigiert Zahl statt string
+* 26.07.22 V1.21    Datenpunkt wird immer beschrieben wenn != zur abgefragten Version
 **************************/
 const logging = true; 
 const debugging = false; 
@@ -141,8 +143,7 @@ async function func_getInternetVersion(){
             log('[DEBUG] ' +'Typ body: ' +typeof data_string);
             log('[DEBUG] ' +'Body: '+data_string);
             log('[DEBUG] ' +'data:' +res.data);
-            log('[DEBUG] ' +'Status: ' +res.status);
-            log('[DEBUG] ' +'Header:' +res.headers);
+            log('[DEBUG] ' +'Status: ' +res.status +' Typeof: '+typeof res.status);
             log('[DEBUG] ' +'Typ Version: ' +typeof Version);
             log('[DEBUG] ' +'Typ Version1: ' +typeof Version[1]);
             log('[DEBUG] ' +'Typ Version2: ' +typeof Version[2]);
@@ -150,13 +151,13 @@ async function func_getInternetVersion(){
             log('[DEBUG] ' +'Version aus URL: '+Version[1]);
             log('[DEBUG] ' +'Name aus URL für Version: '+Version[3]);
         }
-        if(res.Status = '200'){
+        if(res.status = 200){
             if(debugging){
-                log('aktuelle Version (per Internet): '+Version[1]);
-                log('Verwendete CCU (per Internet): '+Version[3]);
+                log('aktuelle Version (per Internet): '+Version[1] +' --- Verwendete CCU (per Internet): '+Version[3]);
+                
             }
         }
-        return {Version: Version[1], CCU: Version[3], Status: res.Status};
+        return {Version: Version[1], CCU: Version[3], Status: res.status};
     }
     catch (e) {
     
@@ -172,50 +173,59 @@ async function func_Version(){
     var get_InternetVersion = await func_getInternetVersion()
     var Internet_Firmware = get_InternetVersion.Version;
     var Internet_CCU = get_InternetVersion.CCU;
+    var Status =  get_InternetVersion.Status;
     
     if(debugging){
-        log('Firmware: '+Internet_Firmware +' Zentrale: ' +Internet_CCU);
+        log('Firmware: '+Internet_Firmware +' Zentrale: ' +Internet_CCU) +' --- Status: '+Status;
     }
     
+    if(Status == 200){
+        if(Version_Internet_alt != Internet_Firmware){
+            setState(id_Version_Internet,Internet_Firmware);
+        }
 
-    if(Version_installiert == Internet_Firmware){
-        if(logging){
-            log('Installierte Firmware '+Version_installiert  +' der CCU ('+Internet_CCU  +') ist aktuell.');
+        if(Version_installiert == Internet_Firmware){
+            if(logging){
+                log('Installierte Firmware '+Version_installiert  +' der CCU ('+Internet_CCU  +') ist aktuell.');
+            }
+        }
+        else{
+            if(Version_Internet_alt == Internet_Firmware){
+                if(logging){
+                    log('Installierte Firmware der CCU ('+Internet_CCU  +') ist nicht aktuell. Installiert: ' +Version_installiert +' --- Verfügbare Version: '+Internet_Firmware);
+                }
+
+            }
+            else{
+                _message_tmp = 'Installierte Firmware der CCU ('+Internet_CCU  +') ist nicht aktuell. Installiert: ' +Version_installiert +' --- Verfügbare Version: '+Internet_Firmware;
+                if(logging){
+                    log(_message_tmp);
+                }
+                
+        
+                //Push verschicken
+                if(sendpush){
+                    _prio = prio_Firmware;
+                    _titel = 'CCU-Firmware';
+                    _message = _message_tmp;
+                    send_pushover_V4(_device, _message, _titel, _prio);
+                }
+                if(sendtelegram){
+                    _message = _message_tmp;
+                    send_telegram(_message, user_telegram);
+                }
+                if(sendmail){
+                    _message = _message_tmp;
+                    send_mail(_message);
+                }
+            }
+        
         }
     }
     else{
-        if(Version_Internet_alt == Internet_Firmware){
-            if(logging){
-                log('Installierte Firmware der CCU ('+Internet_CCU  +') ist nicht aktuell. Installiert: ' +Version_installiert +' --- Verfügbare Version: '+Internet_Firmware);
-            }
-
+        if(logging){
+            log('Fehler beim Abruf der Daten aus dem Internet. --- Status: '+Status);
         }
-        else{
-             _message_tmp = 'Installierte Firmware der CCU ('+Internet_CCU  +') ist nicht aktuell. Installiert: ' +Version_installiert +' --- Verfügbare Version: '+Internet_Firmware;
-            if(logging){
-                log(_message_tmp);
-            }
-            setState(id_Version_Internet,Internet_Firmware);
-                            
-           
-    
-            //Push verschicken
-            if(sendpush){
-                _prio = prio_Firmware;
-                _titel = 'CCU-Firmware';
-                _message = _message_tmp;
-                send_pushover_V4(_device, _message, _titel, _prio);
-            }
-            if(sendtelegram){
-                _message = _message_tmp;
-                send_telegram(_message, user_telegram);
-            }
-            if(sendmail){
-                _message = _message_tmp;
-                send_mail(_message);
-            }
-        }
-    
     }
    
 }   
